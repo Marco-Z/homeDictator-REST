@@ -1,24 +1,7 @@
 from flask import request
+import datetime as dt
 from flask_restful import Resource, reqparse
-from homeDictator.common.db import query_db
-
-activities_list = [{'id': 0,
-					'user': 2,
-					'task': 1,
-					'date': '30-07-2017',
-					'description': None},
-				   {'id': 1,
-					'user': 4,
-					'task': 10,
-					'date': '30-07-2017',
-					'description': None}
-					]
-act_id = 2
-
-def get_last_activities_for_each_type():
-	return activities_list
-
-
+from homeDictator.common.db import db, User, Journal
 
 class list(Resource):
 	def get(self, group_id):
@@ -27,17 +10,16 @@ class list(Resource):
 		parser.add_argument('count')
 		args = parser.parse_args()
 		try: offset = int(args['offset'])
-		except: offset = None
+		except: offset = 0
 		try: count = int(args['count'])
-		except: count = None
-		if offset is not None and count is not None:
-			return activities_list[offset:offset+count]
-		else:
-			if offset is None:
-				offset = 0
-			if count is None:
-				count = 10
-			return activities_list[offset:offset+count]
+		except: count = 10
+		activities = (Journal.query.order_by(Journal.date.desc())
+								   .join(User)
+								   .filter_by(group=group_id)
+								   .offset(offset)
+								   .limit(count)
+								   .all())
+		return [activity.toJSON() for activity in activities]
 
 class _type(Resource):
 	def get(self, group_id, _type):
@@ -46,47 +28,57 @@ class _type(Resource):
 		parser.add_argument('count')
 		args = parser.parse_args()
 		try: offset = int(args['offset'])
-		except: offset = None
+		except: offset = 0
 		try: count = int(args['count'])
-		except: count = None
-		if _type is not None:
-			if offset is None:
-				offset = 0
-			if count is None:
-				count = 10
-			ac_list = [x for x in activities_list if x['task'] == _type]
-			return ac_list[offset:offset+count]
-		else:
-			return {'message': 'error'}
+		except: count = 10
+		activities = (Journal.query.order_by(Journal.date.desc())
+								   .filter_by(task=_type)
+								   .join(User)
+								   .filter_by(group=group_id)
+								   .offset(offset)
+								   .limit(count)
+								   .all())
+		return [activity.toJSON() for activity in activities]
 
+# TO FIX
 class last(Resource):
 	def get(self, group_id):
-			return get_last_activities_for_each_type()
+		activities = (Journal.query.order_by(Journal.date.desc())
+								   .group_by(Journal.task)
+								   .join(User)
+								   .filter_by(group=group_id)
+								   .all())
+		return [activity.toJSON() for activity in activities]
+
 
 class create(Resource):
 	def post(self, group_id):
-		global act_id
-		activity = {}
-		activity['id'] = act_id
-		act_id+=1
-		activity['user'] = request.form['user'] # id of user
-		activity['task'] = request.form['task'] # id of task
-		activity['date'] = request.form['date']
-		activity['description'] = request.form['description']
-		activities_list.append(activity)
-		return {'activity': activity}
+		try:
+			user = request.form['user']
+			task = request.form['task']
+			date = dt.datetime.strptime(request.form['date'], "%d-%m-%Y").date()
+			description = request.form['description']
+		except Exception as e:
+			return {'message': 'invalid activity post: ' + str(e)}
+		activity = Journal(user, task, date, description)
+		db.session.add(activity)
+		db.session.commit()
+		return activity.toJSON()
 
 class destroy(Resource):
 	def post(self, group_id):
-		# delete
 		try:
 			_id = int(request.form['id'])
 		except Exception:
-			_id = None
-		activity = next((x for x in activities_list if _id == x['id']),None)
-		if activity is None:
-			# error
-			return {'message': 'error'}
-		activities_list.remove(activity)
-		return {'activity': activity}
+			return {'message': 'invalid request'}
+		activity = (Journal.query.filter_by(id=_id)
+								 .join(User)
+								 .filter_by(group=group_id)
+								 .first())
+		if activity is not None:
+			db.session.delete(activity)
+			db.session.commit()
+			return activity.toJSON()
+		else:
+			return {'message': 'no activity'}
 

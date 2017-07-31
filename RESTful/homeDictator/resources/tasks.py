@@ -1,40 +1,59 @@
 from flask import request
 from flask_restful import Resource, reqparse
-from homeDictator.common.db import query_db
-
-tasks_list = [ {'id': 0,
-				'name': 'piatti',
-				'frequency': 1980,
-				'value': 2,
-				'description':'lavare i piatti'},
-			   {'id': 1,
-				'name': 'aspirapolvere',
-				'frequency': 7,
-				'value': 5,
-				'description': 'passare l\'aspirapolvere'}
-				]
-tas_id = 2
-
+from homeDictator.common.db import db, User, Task
 
 class list(Resource):
 	def get(self, group_id):
-		return tasks_list
+		tasks = Task.query.filter_by(group=group_id).all()
+		if tasks is None:
+			return {'message': 'no tasks found'}
+		return [task.toJSON() for task in tasks]
 
 class create(Resource):
 	def post(self, group_id):
-		global tas_id
-		task = {}
-		task['id'] = tas_id
-		tas_id+=1
-		task['name'] = request.form['name'] # id of user
-		task['frequency'] = request.form['frequency'] # id of task
-		task['value'] = request.form['value']
-		task['description'] = request.form['description']
-		tasks_list.append(task)
-		return {'activity': task}
+		try:
+			name = request.form['name']
+			frequency = request.form['frequency']
+			value = request.form['value']
+		except Exception as e:
+			return {'message': 'invalid activity post: ' + str(e)}
+		task = Task(name, frequency, value, group_id)
+		db.session.add(task)
+		db.session.commit()
+		return task.toJSON()
 
 class update(Resource):
 	def post(self, group_id):
+		try:
+			_id = request.form['id']
+		except: return {'message': 'invalid request'}
+		try:
+			task = (Task.query.filter_by(group=group_id)
+							  .filter_by(id=_id)
+							  .first())
+			if task is None:
+				return {'message': 'no such task in this group'}
+			else:
+				try:
+					name = request.form['name']
+					task.name = name
+				except: pass
+				try:
+					frequency = request.form['frequency']
+					task.frequency = frequency
+				except: pass
+				try:
+					value = request.form['value']
+					task.value = value
+				except: pass
+				try:
+					db.session.commit()
+				except Exception as e: return {'message': str(e)}
+				return task.toJSON()
+		except Exception as e:
+			return {'message': str(e)}
+
+
 		try:
 			_id = int(request.form['id'])
 			# update case
@@ -44,7 +63,6 @@ class update(Resource):
 				return {'message': 'error'}
 			task['name'] = request.form['name']
 			task['frequency'] = request.form['frequency']
-			task['description'] = request.form['description']
 			task['value'] = request.form['value']
 			return {'task': task}
 		except Exception:
@@ -52,16 +70,17 @@ class update(Resource):
 
 class destroy(Resource):
 	def post(self, group_id):
-		# delete
 		try:
 			_id = int(request.form['id'])
 		except Exception:
-			_id = None
-		task = next((x for x in tasks_list if _id == x['id']),None)
-		if task is None:
-			# error
-			return {'message': 'error'}
-		tasks_list.remove(task)
-		return {'task': task}
-
+			return {'message': 'invalid request'}
+		task = (Task.query.filter_by(id=_id)
+						  .filter_by(group=group_id)
+						  .first())
+		if task is not None:
+			db.session.delete(task)
+			db.session.commit()
+			return movement.toJSON()
+		else:
+			return {'message': 'no task'}
 

@@ -1,23 +1,14 @@
 from flask import request
+import datetime as dt
 from flask_restful import Resource, reqparse
-from homeDictator.common.db import query_db
-
-movements = [{'user':'marco',
-			  'amount':'10.25',
-			  'date': '31-07-2017',
-			  'description': 'prova',
-			  'id': 0 }
-			]
-bal = [{'user': 'marco',
-		'balance': 10.21},
-	   {'user': 'matteo',
-		'balance': -10.21}
-	  ]
-mov_id = 0
+from homeDictator.common.db import db, Finance, User
 
 class balance(Resource):
 	def get(self, group_id):
-		return bal
+		users = User.query.filter_by(group=group_id).all()
+		if users is None:
+			return {'message': 'error'}
+		return [user.toJSON() for user in users]
 
 class list(Resource):
 	def get(self, group_id):
@@ -29,50 +20,42 @@ class list(Resource):
 		except: offset = 0
 		try: count = int(args['count'])
 		except: count = 10
-		return movements[offset:offset+count]
+		movements = (Finance.query.order_by(Finance.date.desc())
+								  .join(User)
+								  .filter_by(group=group_id)
+								  .offset(offset)
+								  .limit(count)
+								  .all())
+		return [movement.toJSON() for movement in movements]
 
 class create(Resource):
 	def post(self, group_id):
-		global mov_id
-		movement = {}
-
-		movement['id'] = mov_id
-		mov_id+=1
-		movement['user'] = request.form['user']
-		movement['amount'] = request.form['amount']
-		movement['date'] = request.form['date']
-		movement['description'] = request.form['description']
-		movements.append(movement)
-		return {'movement': movement}
-
-class update(Resource):
-	def post(self, group_id):
 		try:
-			_id = int(request.form['id'])
-			# update case
-			movement = next((x for x in movements if _id == x['id']),None)
-			if movement is None:
-				# error
-				return {'message': 'error'}
-			movement['user'] = request.form['user']
-			movement['amount'] = request.form['amount']
-			movement['date'] = request.form['date']
-			movement['description'] = request.form['description']
-			return {'movement': movement}
-		except Exception:
-			return {'message': 'error'}
+			user = request.form['user']
+			amount = request.form['amount']
+			date = dt.datetime.strptime(request.form['date'], "%d-%m-%Y").date()
+			description = request.form['description']
+		except:
+		   return {'message': 'invalid movement post'}
+		movement = Finance(user, amount, date, description)
+		db.session.add(movement)
+		db.session.commit()
+		return movement.toJSON()
 
 class destroy(Resource):
 	def post(self, group_id):
-		# delete
 		try:
 			_id = int(request.form['id'])
 		except Exception:
-			_id = None
-		movement = next((x for x in movements if _id == x['id']),None)
-		if movement is None:
-			# error
-			return {'message': 'error'}
-		movements.remove(movement)
-		return {'movement': movement}
+			return {'message': 'invalid request'}
+		movement = (Finance.query.filter_by(id=_id)
+								 .join(User)
+								 .filter_by(group=group_id)
+								 .first())
+		if movement is not None:
+			db.session.delete(movement)
+			db.session.commit()
+			return movement.toJSON()
+		else:
+			return {'message': 'no movement'}
 

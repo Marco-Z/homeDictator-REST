@@ -1,51 +1,41 @@
 from flask import request
 from flask_restful import Resource, reqparse
-from homeDictator.common.db import query_db
-from functools import lru_cache
-
-groups_list = [{'id': 0, 'name': '2 piano'},{'id': 1, 'name': '3 piano'}]
-grogroup_id = 2
+from homeDictator.common.db import db, Group
+# from functools import lru_cache
 
 class get_group(Resource):
-	@lru_cache(maxsize=32)
+	# @lru_cache(maxsize=32)
 	def get(self, group_id):
-		group = next((x for x in groups_list if group_id == x['id']),None)
+		group = Group.query.filter_by(id=group_id).first()
 		if group is None:
-			# error
-			return {'message': 'error'}
-		return group
+			return {'message': 'No such group'}
+		return group.toJSON()
 
 class create(Resource):
 	def post(self):
-		global grogroup_id
-		group = {}
-
-		group['id'] = grogroup_id
-		grogroup_id+=1
-		group['name'] = request.form['name']
-		groups_list.append(group)
-		return group
+		name = request.form['name']
+		group = Group(name)
+		db.session.add(group)
+		db.session.commit()
+		return group.toJSON()
 
 class update(Resource):
 	def post(self, group_id):
 		try:
-			group_id = int(request.form['id'])
-			# update case
-			group = next((x for x in groups_list if group_id == x['id']),None)
+			group = Group.query.filter_by(id=group_id).first()
 			if group is None:
-				# error
-				return {'message': 'error'}
-			group['name'] = request.form['name']
-			return {'group': group}
-		except Exception:
-			return {'message': 'error'}
+				return {'message': 'No such group'}
+			name = request.form['name']
+			if name is not None:
+				group.name = name
+				db.session.commit()
+				return group.toJSON()
+		except Exception as e:
+			return {'message': str(e)}
 
 class destroy(Resource):
 	def post(self, group_id):
-		group = next((x for x in groups_list if group_id == x['id']),None)
-		if group is None:
-			# error
-			return {'message': 'error'}
-		groups_list.remove(group)
-		return {'group': group}
+		group = Group.query.filter_by(id=group_id).delete()
+		db.session.commit()
+		return group
 

@@ -1,7 +1,6 @@
-from flask import Flask, request
-from flask_restful import Resource, Api, reqparse
+from flask import Flask
+from flask_restful import Api, reqparse
 from homeDictator.resources import finance, groups, journal, tasks, users
-# from homeDictator.resources.users import users
 
 app = Flask(__name__)
 api = Api(app)
@@ -9,7 +8,6 @@ api = Api(app)
 api.add_resource(finance.list, '/<int:group_id>/finance/list', endpoint='finance/list')
 api.add_resource(finance.balance, '/<int:group_id>/finance/balance')
 api.add_resource(finance.create, '/<int:group_id>/finance/create', endpoint='finance/create')
-api.add_resource(finance.update, '/<int:group_id>/finance/update', endpoint='finance/update')
 api.add_resource(finance.destroy, '/<int:group_id>/finance/destroy', endpoint='finance/destroy')
 
 api.add_resource(groups.get_group, '/<int:group_id>')
