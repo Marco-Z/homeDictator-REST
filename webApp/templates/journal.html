@@ -1,0 +1,71 @@
+<!doctype html>
+<head>
+	<title>Attività svolte</title>
+	{%include 'links.html'%}
+	<script>
+		$(document).ready(function() {
+			$('select').material_select();		
+			$('.button-collapse').sideNav();
+		});
+	</script>
+</head>
+<body>
+	{%include 'navbar_sidebar.html'%}
+	<div class="row">
+		<div class="col s12">
+			<div class="card">
+				<div class="card-content white-text">
+					{%if error%}
+					<span>{{error}}</span>
+					{%endif%}
+					<form action="/manage_journal" method="POST">
+						<span class="card-title" style="display:inline-block;">Attività svolte:</span>
+						<button class="btn waves-effect waves-light red right" type="submit" name="action">
+							<i class="material-icons">delete_forever</i>Cancella</button>
+						</button>
+						<table>
+
+							{% for entry in journal %}
+							<tr>
+								<td>
+									<p>
+										<input name="activity" type="radio" id="{{ entry['id'] }}" value="{{ entry['id'] }}" />
+										<label for="{{ entry['id'] }}"></label>
+									</p>
+								</td>
+								<td>
+									<p>
+										{{ entry['user'] }}
+									</p>
+								</td>
+								<td>
+									<p>
+										{{ entry['date'] }}
+									</p>
+								</td>
+								<td>
+									<p>
+										{{ entry['task'] }}
+									</p>
+								</td>
+							</tr>
+							{% endfor %}
+						</table>
+					</form>
+				</div>
+			</div>
+			{% if offset >= 10 %}
+			<form action="/manage_journal">
+				<input type="hidden" name="offset" value="{{offset-10}}">
+				<button class="btn-floating btn-large waves-effect waves-light blue"><i class="material-icons">chevron_left</i></button>
+			</form>
+			{% endif %}
+			{% if count > offset + 10 %}
+			<form action="/manage_journal">
+				<input type="hidden" name="offset" value="{{offset+10}}">
+				<button class="btn-floating btn-large waves-effect waves-light blue right"><i class="material-icons">chevron_right</i></button>
+			</form>
+			{% endif %}
+		</div>
+	</div>
+</body>

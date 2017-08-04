@@ -1,6 +1,10 @@
 from flask import request
 from flask_restful import Resource, reqparse
-from homeDictator.common.db import db, Group
+from homeDictator.common.db import db, Group, User, Journal, Task, _all, _first
+from flask_restful.utils import cors 
+import json 
+from sqlalchemy.sql.functions import func
+
 # from functools import lru_cache
 
 class get_group(Resource):
@@ -9,11 +13,23 @@ class get_group(Resource):
 		group = Group.query.filter_by(id=group_id).first()
 		if group is None:
 			return {'message': 'No such group'}
+		members = (db.session.query(Journal.user,
+								   func.sum(Task.value).label('points'),
+								   User.name,
+								   User.balance,
+								   User.group
+								  )
+							 .join(Task)
+							 .join(User)
+							 .group_by(Journal.user))
+		if members is None: 
+			return {'message': 'No members for this group'} 
+		group.members = _all(members) 
 		return group.toJSON()
 
 class create(Resource):
 	def post(self):
-		name = request.form['name']
+		name = request.form['group']
 		group = Group(name)
 		db.session.add(group)
 		db.session.commit()

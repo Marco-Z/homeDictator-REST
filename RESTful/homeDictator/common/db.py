@@ -4,6 +4,29 @@ import json
 
 db = SQLAlchemy()
 
+def _all(query):
+	res = []
+	data = query.all()
+	schema = query.column_descriptions
+	for row in data:
+		r = {}
+		for i,column in enumerate(schema):
+			r[column['name']] = row[i]
+			if column['name'] == 'date':
+				r[column['name']] = row[i].strftime("%Y-%m-%d")
+		res.append(r)
+	return res
+
+def _first(query):
+	data = query.first()
+	schema = query.column_descriptions
+	r = {}
+	for i,column in enumerate(schema):
+		r[column['name']] = row[i]
+		if column['name'] == 'date':
+			r[column['name']] = row[i].strftime("%Y-%m-%d")
+	return r
+
 class Finance(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	user = db.Column(db.Integer, db.ForeignKey('user.id'))
@@ -18,23 +41,26 @@ class Finance(db.Model):
 		self.description = description
 
 	def toJSON(self):
-		return {'id': self.id, 
+		return ({'id': self.id, 
 				'user': self.user,
 				'amount': self.amount,
 				'date': self.date.strftime("%d-%m-%Y"),
 				'description': self.description
-				}
+				})
 
 class Group(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(50), unique=True)
+	members = []
 
 	def __init__(self, name):
 		self.name = name
 
 	def toJSON(self):
-		return {'id': self.id, 
-				'name': self.name}
+		return ({'id': self.id, 
+				 'name': self.name,
+				 'members': self.members
+				})
 
 class Journal(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
@@ -50,12 +76,12 @@ class Journal(db.Model):
 		self.description = description
 
 	def toJSON(self):
-		return {'id': self.id, 
+		return ({'id': self.id, 
 				'user': self.user,
 				'task': self.task,
 				'date': self.date.strftime("%d-%m-%Y"),
 				'description': self.description
-				}
+				})
 
 class Task(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
@@ -71,12 +97,12 @@ class Task(db.Model):
 		self.group = group
 
 	def toJSON(self):
-		return {'id': self.id, 
+		return ({'id': self.id, 
 				'name': self.name,
 				'frequency': self.frequency,
 				'value': self.value,
 				'group': self.group
-				}
+				})
 				
 class User(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
@@ -93,11 +119,11 @@ class User(db.Model):
 		self.group = group
 
 	def toJSON(self):
-		return {'id': self.id, 
+		return ({'id': self.id, 
 				'name': self.name,
 				'password': self.password,
 				'avatar': self.avatar,
 				'balance': self.balance,
 				'group': self.group
-				}
+				})
 				

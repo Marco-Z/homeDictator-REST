@@ -1,0 +1,73 @@
+<!doctype html>
+<head>
+	<title>$pese</title>
+	{%include 'links.html'%}
+	<script>
+		 $(document).ready(function() {
+		$('select').material_select();
+		$('.button-collapse').sideNav();
+	  });
+	</script>
+</head>
+<body>
+	{%include 'navbar_sidebar.html'%}
+	<div class="row">
+		<div class="col s12">
+			<div class="card">
+				<div class="card-content white-text">
+					<table class="">
+						<thead>
+							<tr>
+								<th>
+								Creditore
+								</th>
+								<th>
+								Importo
+								</th>
+								<th>
+								Data
+								</th>
+								<th>
+								Descrizione
+								</th>
+							</tr>
+						</thead>
+						<tbody>
+							{% for entry in list %}
+							<tr>
+								<td>
+										{{ entry['user'] }}
+								</td>
+								<td>
+										{{ "{0:.2f}".format(entry['amount']) }} €
+								</td>
+								<td>
+										{{ entry['date'] }}
+								</td>
+								<td>
+										{{ entry['description'] }}
+								</td>
+								<td>
+										{{ entry['number'] }}
+								</td>
+							</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+			</div>
+			{% if offset >= 10 %}
+			<form action="/movements">
+				<input type="hidden" name="offset" value="{{offset-10}}">
+				<button class="btn-floating btn-large waves-effect waves-light blue"><i class="material-icons">chevron_left</i></button>
+			</form>
+			{% endif %}
+			{% if count > offset + 10 %}
+			<form action="/movements">
+				<input type="hidden" name="offset" value="{{offset+10}}">
+				<button class="btn-floating btn-large waves-effect waves-light blue right"><i class="material-icons">chevron_right</i></button>
+			</form>
+			{% endif %}
+		</div>
+	</div>
+</body>

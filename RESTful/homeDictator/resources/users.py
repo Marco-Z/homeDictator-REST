@@ -4,8 +4,20 @@ from homeDictator.common.db import db, User, Journal
 
 class _get(Resource):
 	def get(self, group_id, user_id):
-		user = (User.query.filter_by(group=group_id)
+		user = (User.query.order_by(User.name) 
+						  .filter_by(group=group_id) 
 						  .filter_by(id=user_id)
+						  .first())
+		if user is None:
+			return {'message': 'no such user in this group'}
+		else:
+			return user.toJSON()
+
+class search(Resource):
+	def post(self, group_id):
+		name = request.form['name']
+		user = (User.query.filter_by(group=group_id) 
+						  .filter_by(name=name)
 						  .first())
 		if user is None:
 			return {'message': 'no such user in this group'}
@@ -16,6 +28,7 @@ class journal(Resource):
 	def get(self, group_id, user_id):
 		activities = (Journal.query.filter_by(user=user_id)
 								   .join(User)
+								   .order_by(User.name) 
 								   .filter_by(group=group_id)
 								   .all())
 		return [activity.toJSON() for activity in activities]
@@ -58,6 +71,27 @@ class update(Resource):
 					avatar = request.form['avatar']
 					user.avatar = avatar
 				except: pass
+				try:
+					db.session.commit()
+				except Exception as e: return {'message': str(e)}
+				return user.toJSON()
+		except Exception as e:
+			return {'message': str(e)}
+
+class update_balance(Resource):
+	def post(self, group_id, user_id):
+		try:
+			user = (User.query.filter_by(group=group_id)
+							  .filter_by(id=user_id)
+							  .first())
+			if user is None:
+				return {'message': 'no such user in this group'}
+			else:
+				try:
+					delta = float(request.form['delta'])
+					user.balance += delta
+				except Exception as e:
+					return {'message': str(e)}
 				try:
 					db.session.commit()
 				except Exception as e: return {'message': str(e)}
