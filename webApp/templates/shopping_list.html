@@ -3,26 +3,25 @@
 	<title>Lista della spesa</title>
 	{%include 'links.html'%}
 	<script>
-		 $(document).ready(function() {
-		$('select').material_select();
-		$('.button-collapse').sideNav();
-	  });
+		$(document).ready(function() {
+			$('select').material_select();
+			$('.button-collapse').sideNav();
+		});
 	</script>
 </head>
 <body>
 	{%include 'navbar_sidebar.html'%}
-	<div class="row">
+	<div class="row margin-top">
 		<div class="col s12">
-          <div class="card">
-            <div class="card-content white-text">
-            <span class="card-title">Lista della spesa:</span>
-			  <form action="/shopping_list" method="POST">
-				<textarea id="textarea1" class="materialize-textarea" name="list">{{ list }}</textarea>
-				<label for="textarea1">lista della spesa</label>
-          		<button type="submit" class="right waves-effect waves-light btn">Salva</button>
-			  </form>
-            </div>
-          </div>
+			<div class="card">
+			<div class="card-content white-text row">
+					<span class="card-title">Shopping List:</span>
+					<form action="/shopping_list" method="POST">
+						<textarea id="textarea1" class="materialize-textarea flow-text" name="list">{{ list }}</textarea>
+						<button type="submit" class="right waves-effect waves-light btn blue">Save</button>
+					</form>
+				</div>
+			</div>
 		</div>
-      </div>
+	</div>
 </body>

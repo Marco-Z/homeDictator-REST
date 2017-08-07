@@ -28,8 +28,9 @@ api.add_resource(tasks.update, '/<int:group_id>/tasks/update', endpoint='tasks/u
 api.add_resource(tasks.destroy, '/<int:group_id>/tasks/destroy', endpoint='tasks/destroy')
 
 api.add_resource(users._get, '/<int:group_id>/<int:user_id>', endpoint='users/_get')
-api.add_resource(users.search, '/<int:group_id>/search', endpoint='users/search')
+api.add_resource(users.search, '/search', endpoint='users/search')
 api.add_resource(users.journal, '/<int:group_id>/<int:user_id>/journal', endpoint='users/journal')
+api.add_resource(users.gist, '/<int:group_id>/<int:user_id>/gist', endpoint='users/gist')
 api.add_resource(users.create, '/<int:group_id>/create_user', endpoint='users/create')
 api.add_resource(users.update, '/<int:group_id>/<int:user_id>/update', endpoint='users/update')
 api.add_resource(users.update_balance, '/<int:group_id>/<int:user_id>/update_balance', endpoint='users/update_balance')

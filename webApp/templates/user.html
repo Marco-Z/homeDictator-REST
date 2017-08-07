@@ -1,0 +1,214 @@
+<!doctype html>
+<head>
+	<title>{{name}} - profile</title>
+	{%include 'links.html'%}
+	<script src="{{ url_for('static',filename='js/dropzone.js')}}"></script>
+	<link href="{{ url_for('static',filename='css/dropzone.css')}}" rel="stylesheet" type="text/css">
+	<script>
+		$(document).ready(function() {
+			$('select').material_select();
+			$('.button-collapse').sideNav();
+			$('#dropnav').dropdown({ hover: true, belowOrigin: false });
+			$('#dropbar').dropdown({ hover: false, belowOrigin: false });
+		});
+	</script>
+</head>
+<body>
+	{%include 'navbar_sidebar.html'%}
+	<div class="container">
+		<!-- Page Content goes here -->
+		<div class="row">
+			<div id="title" class="col s12">
+				<h4 class="grey-darken-3 white-text center" >
+					{{ name }}'s account - {{ group_name }} group
+				</h4>
+			</div>
+
+			<div class="col s12">
+				<div class="card center-align">
+					<div class="card-content white-text center-align">
+						<img class="responsive-img plot" src="{{ url_for('static',filename=plot)}}">
+					</div>
+				</div>
+			</div>
+
+			<div class="col s12">
+				<div class="card center-align">
+					<span class="card-title white-text">Edit profile</span>
+
+					<div class="card-content white-text center-align row ">
+						<div id="user-title" class="col s12 m4">
+							<img class="responsive-img center-align circle" id="userpage-img" src="{{ url_for('static',filename='img/'+name+'.jpg')}}?dummy={{time}}">
+
+							<div class="row">
+								<div class="col s12 center-align">
+									<form class="dropzone" id="my-awesome-dropzone" method="POST" action="/change-avatar" enctype="multipart/form-data">
+										<script type="text/javascript">
+
+											Dropzone.options.myAwesomeDropzone = {
+												method:"POST",
+												paramName: "file", // The name that will be used to transfer the file
+												maxFilesize: 3,
+												parallelUploads: 1,
+												uploadMultiple: false,
+												maxFiles:1,
+												acceptedFiles: "image/jpeg,image/png,image/gif",
+												addRemoveLinks: false,
+												dictResponseError: 'Error, check that the file respects the limits!',
+												dictFileTooBig:'File too big',
+												dictMaxFilesExceeded:'Reload the page tp change avatar',
+
+												init: function() {
+													this.on("error", function(file,errormessage, xhr){
+														if (!file.accepted) {
+															setTimeout(function(){
+																this.removeFile(file);
+															}, 2000);
+														}
+													});
+													this.on("success", function(file,errormessage, xhr){
+														Materialize.toast('Avatar successfully changed', 2500,'',
+														function(){location.reload()}
+														)
+													});
+												}
+											}
+										</script>
+										<div class="dz-message" data-dz-message>
+											<span><b>Click here</b>  or drop an image to change avatar</span>
+											<span style="font-size: 70%;"><br>The image has to be square.<br>Max 650x650px not over 3MB</span>
+										</div>
+										<div class="fallback">
+											<input name="file" type="file" multiple />
+										</div>
+									</form>
+								</div>
+							</div>
+						</div>
+
+						<div id="user" class="col s12 m8">
+							<div class="row white-text">
+								<form class="col s12" autocomplete="off" method="POST" action="update_user">
+									<div class="row">
+										<div class="input-field col s12">
+											<input id="username" name="username" type="text" class="validate" autocomplete="off">
+											<label for="username">New Username</label>
+										</div>
+									</div>
+									<div class="row">
+										<div class="input-field col s12">
+											<input id="password" name="password" type="password" class="validate" autocomplete="new-password">
+											<label for="password">New Password</label>
+										</div>
+									</div>
+									<button class="waves-effect waves-light btn-large blue right"><i class="material-icons left">save</i>Update info</button>
+								</form>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="col s12">
+				<div class="card center-align">
+					<span class="card-title white-text">Edit group</span>
+
+					<div class="card-content white-text center-align row ">
+						<div id="group" class="col s12">
+							<div class="row white-text">
+								<form class="col s12" autocomplete="new-password" action="/update_group" method="POST">
+									<div class="row">
+										<div class="input-field col s12">
+											<input id="group_name" name="group_name" type="text" class="validate" autocomplete="off">
+											<label for="group_name">New Group name</label>
+										</div>
+									</div>
+									<div class="row">
+										<div class="input-field col s12 m4">
+											<input id="new_member_name" name="new_member_name" type="text" class="validate" autocomplete="off">
+											<label for="new_member_name">New Member name</label>
+										</div>
+										<div class="input-field col s12 m4">
+											<input id="new_member_password" name="new_member_password" type="password" class="validate" autocomplete="new-password">
+											<label for="new_member_password">New Member password</label>
+										</div>
+										<!-- <div class="input-field col s12 m4">
+											<input id="new_member_avatar" name="new_member_avatar" type="text" class="validate" autocomplete="off">
+											<label for="new_member_avatar">New Member avatar</label>
+										</div> -->
+									</div>
+									<div class="row">
+										<button class="waves-effect waves-light btn-large blue right s12"><i class="material-icons left">save</i>Update info</button>
+									</div>
+									<div class="row">
+										<div class="input-field col s12 m6">
+											<select name="delete_user">
+												<option value="" disabled selected>Member</option>
+												{% for m in members %}
+												<option value="{{ m['id'] }}">{{ m['name'] }}</option>
+												{% endfor %}
+											</select>
+											<label>Delete user from group</label>
+										</div>
+										<div class="input-field col s12 m6">
+											<button class="waves-effect waves-light btn-large red left"><i class="material-icons left">clear</i>Delete user</button>
+										</div>
+									</div>
+									<a class="waves-effect waves-light btn-large red left" href="/delete_group"><i class="material-icons left">clear</i>Delete group</a>
+								</form>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+
+			<div class="col s12">
+				<div class="card center-align">
+					<span class="card-title white-text">Edit task</span>
+
+					<div class="card-content white-text center-align row ">
+						<div id="task" class="col s12">
+							<div class="row white-text">
+								<form class="col s12" autocomplete="new-password" action="update_task" method="POST">
+									<div class="row">
+										<div class="input-field col s12">
+											<select name="task">
+												<option value="" disabled selected>Select task</option>
+												<option value="0">New</option>
+												{% for t in tasks %}
+												<option value="{{ t['id'] }}">{{ t['name'] }}</option>
+												{% endfor %}
+											</select>
+											<label>Select task to edit</label>
+										</div>
+									</div>
+									<div class="row">
+										<div class="input-field col s12 m4">
+											<input id="task_name" name="task_name" type="text" class="validate" >
+											<label for="task_name">Task Name</label>
+										</div>
+										<div class="input-field col s12 m4">
+											<input id="task_value" name="task_value" type="number" class="validate" >
+											<label for="task_value">Task Value</label>
+										</div>
+										<div class="input-field col s12 m4">
+											<input id="task_frequency" name="task_frequency" type="number" class="validate" >
+											<label for="task_frequency">Task Frequency</label>
+										</div>
+									</div>
+									<div class="row">
+										<div class="input-field col s12">
+											<button class="waves-effect waves-light btn-large blue right"><i class="material-icons left">save</i>Save task</button>
+										</div>
+									</div>
+								</form>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</div>
+	</div>
+</body>

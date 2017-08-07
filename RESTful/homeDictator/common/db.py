@@ -51,6 +51,7 @@ class Finance(db.Model):
 class Group(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(50), unique=True)
+	shopping_list = db.Column(db.Text)
 	members = []
 
 	def __init__(self, name):
@@ -119,7 +120,7 @@ class User(db.Model):
 		self.group = group
 
 	def toJSON(self):
-		return ({'id': self.id, 
+		return ({'_id': self.id, 
 				'name': self.name,
 				'password': self.password,
 				'avatar': self.avatar,

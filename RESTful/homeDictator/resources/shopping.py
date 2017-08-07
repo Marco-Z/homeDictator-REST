@@ -1,6 +1,6 @@
 from flask import request
 from flask_restful import Resource, reqparse
-from homeDictator.common.db import db, Group, User, Journal, Task, _all, _first
+from homeDictator.common.db import db, Group
 from flask_restful.utils import cors 
 import json 
 from sqlalchemy.sql.functions import func
@@ -8,11 +8,8 @@ from sqlalchemy.sql.functions import func
 class read(Resource):
 	# @lru_cache(maxsize=32)
 	def get(self, group_id):
-		myfile = open('shopping_list.txt', 'r')
-		shopping = myfile.read()
-		print(shopping)
-		myfile.close()
-		return shopping
+		response = db.session.query(Group.shopping_list).filter_by(id=group_id).one()
+		return(response[0])
 
 class write(Resource):
 	def post(self, group_id):
@@ -20,10 +17,14 @@ class write(Resource):
 			shopping = request.form['list']
 		except Exception:
 			return {'message': 'invalid request'}
-		myfile = open('shopping_list.txt', 'w')
-		print('writing---------------')
-		print(shopping)
-		myfile.write(shopping)
-		myfile.flush()
-		myfile.close()
-		return shopping
+		try:
+			group = Group.query.filter_by(id=group_id).first()
+			if group is None:
+				return {'message': 'No such group'}
+			shopping = request.form['list']
+			if shopping is not None:
+				group.shopping_list = shopping
+				db.session.commit()
+				return group.toJSON()
+		except Exception as e:
+			return {'message': str(e)}

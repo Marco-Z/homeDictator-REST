@@ -1,11 +1,12 @@
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash, make_response, session, escape, json
 from datetime import date
 from subprocess import Popen
-import os
+import os, time
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_openid import OpenID
 import requests
 from user import User
+import plots
 
 app = Flask(__name__)
 app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
@@ -19,31 +20,87 @@ url = 'http://localhost:5050'
 #-----
 @login_m.user_loader
 def load_user(user_id):
-	group_id = 2
 	try:
-		return User(requests.get(url+'/'+str(group_id)+'/'+str(user_id), data=None)) # get user info
-	except:
+		group_id,_id = user_id.split('_',2)
+		user = json.loads(requests.get(url+'/'+str(group_id)+'/'+str(_id), data=None).text)
+		return User(user) # get user info
+	except Exception as e:
+		print(str(e))
 		return None
 #----
 @app.route("/")
 def index(error=None):
-	group_id = 2
-	user_id = 1
-	# user_id = current_user.get_id()
-	if not user_id:
-		return redirect(url_for('login'))
+	if current_user.get_id():
+		group_id = current_user.group
+		user_id = current_user._id
+	else:
+		return render_template('landing.html')
 
 	name = json.loads(requests.get(url+'/'+str(group_id)+'/'+str(user_id), data=None).text)['name']	# get user info
 	users = json.loads(requests.get(url+'/'+str(group_id), data=None).text)['members'] # get data for each user
 	tasks = json.loads(requests.get(url+'/'+str(group_id)+'/tasks/list', data=None).text) # get tasks
 	todo =  json.loads(requests.get(url+'/'+str(group_id)+'/journal/to_do', data=None).text) # get tasks to do
 
-	return render_template('index.html', users=users, tasks=tasks, todo=todo, name=name)
+	plot = 'img/'+plots.points_bar_chart(users, app.static_folder)
+
+	return render_template('index.html', users=users, tasks=tasks, todo=todo, name=name, time=time.time(), plot=plot)
+
+@app.route("/signup", methods=['GET','POST'])
+def signup(error=None):
+	if request.method == 'GET':
+		group_name = request.args['group_name']
+		return render_template('signup.html',group_name=group_name)
+	elif request.method == 'POST':
+		def search(dictionary, substr):
+			result = []
+			for key in dictionary:
+				if substr in key:
+					result.append({key: dictionary[key]})
+			return result
+
+		# group
+		group_name = request.form['group_name']
+		response = requests.post(url+'/create_group', data={'group':group_name})
+		print(json.loads(response.text))
+		group_id = json.loads(response.text)['id']
+
+		# members
+		m = []
+		field = 'member_name_'
+		members = search(request.form.to_dict(), field)
+		for member in members:
+			for key in member:
+				user = {'name': member[key],
+						'password': 'muschio',
+						'avatar': 'photo'}
+				response = requests.post(url+'/'+str(group_id)+'/create_user', data=user)
+
+		# tasks
+		n = []
+		tasks = []
+		t_name = 'task_name_'
+		t_value = 'task_value_'
+		t_freq = 'task_frequency_'
+		tasks_names = search(request.form.to_dict(), t_name)
+		tasks_values = search(request.form.to_dict(), t_value)
+		tasks_freqs = search(request.form.to_dict(), t_freq)
+
+		for task in tasks_names:
+			for key in task:
+				n.append(key.split(t_name,1)[1])
+
+		for i in n:
+			task ={ 'name': request.form[t_name+i],
+					'frequency': request.form[t_freq+i],
+					'value': request.form[t_value+i]}
+			response = requests.post(url+'/'+str(group_id)+'/tasks/create', data=task)
+		return redirect(url_for('login'))
 
 @app.route("/log", methods=['POST'])
+@login_required
 def log():
-	group_id = 2
-	user_id = 1
+	group_id = current_user.group
+	user_id = current_user._id
 	name=None
 	try:
 		# user_id = current_user.get_id()
@@ -65,9 +122,13 @@ def log():
 	return redirect(url_for('index'))
 
 @app.route("/pay", methods=['POST'])
+@login_required
 def pay():
-	group_id=2
+	group_id = current_user.group
+	user_id = current_user._id
 	name=""
+	print('----------------'+'----------------')
+	print(request.form)
 	try:
 		u = request.form['user']
 		amount = float(request.form['amount'])
@@ -80,9 +141,11 @@ def pay():
 			n = user['name']
 			weight[n] = int(request.form[n])
 			somma = somma + weight[n]
+		print('----------------'+u+'----------------')
 		response = requests.post(url+'/'+str(group_id)+'/'+u+'/update_balance', data={'delta':amount})
+		print(users)
 		for user in users:
-			_id = user['user']
+			_id = user['id']
 			n = user['name']
 			delta = -(amount*(weight[n]/somma))
 			response = requests.post(url+'/'+str(group_id)+'/'+str(_id)+'/update_balance', data={'delta':delta})
@@ -100,10 +163,11 @@ def pay():
 		return redirect(url_for('index'))
 
 @app.route("/manage_journal", methods=['GET','POST'])
+@login_required
 def manage_journal():
 	error=""
-	group_id = 2
-	user_id = 1
+	group_id = current_user.group
+	user_id = current_user._id
 	name=None
 	try:
 		# user_id = current_user.get_id()
@@ -144,12 +208,11 @@ def manage_journal():
 @app.route('/login', methods = ['GET','POST'])
 def login():
 	nome=""
-	# if current_user.get_id():
-	# 	error="Hai già eseguito l'accesso"
-	# 	return redirect(url_for('index'))
+	if current_user.get_id():
+		error="Hai già eseguito l'accesso"
+		return redirect(url_for('index'))
 	if request.method == 'POST':
 		try:
-			group_id = 2
 			user = request.form['username']
 			pssw=request.form['password']
 			remember=None
@@ -157,12 +220,20 @@ def login():
 				remember=bool(request.form['remember-me'])
 			except:
 				remember=False
-			response = requests.post(url+'/'+str(group_id)+'/search', data={'name': user})	# search user
+			print('im here')
+			response = requests.post(url+'/search', data={'name': user})	# search user
+			print('found')
+			print(json.loads(response.text))
 			usr=User(json.loads(response.text))
 			if usr and usr.password == pssw:
-				res = login_user(usr,remember=remember)
+				try:
+					res = login_user(usr,remember=remember)
+				except Exception as e:
+					print(str(e))
+					raise e
 				return redirect(url_for('index'))
 		except Exception as e:
+			print(str(e))
 			wrong="Username o password sbagliati"
 			return render_template('login.html',wrong=wrong)
 
@@ -171,9 +242,10 @@ def login():
 
 # TO FIX
 @app.route("/shopping_list", methods=['GET','POST'])
+@login_required
 def shopping_list():
-	group_id = 2
-	user_id = 1
+	group_id = current_user.group
+	user_id = current_user._id
 	name=None
 	try:
 		# user_id = current_user.get_id()
@@ -187,12 +259,13 @@ def shopping_list():
 		return redirect(url_for('index'))
 	else:
 		_list = requests.get(url+'/'+str(group_id)+'/shopping/read', data=None).text.encode('utf8').decode('unicode_escape')
-		return render_template('shopping_list.html',list=_list,name=name)
+		return render_template('shopping_list.html',list=_list[1:len(_list)-2],name=name)
 
 @app.route("/movements")
+@login_required
 def movements():
-	group_id = 2
-	user_id = 1
+	group_id = current_user.group
+	user_id = current_user._id
 	name=None
 	try:
 		# user_id = current_user.get_id()
@@ -217,14 +290,6 @@ def movements():
 	count = int(response['count'])
 	return render_template('finance.html',list=movs,name=name,count=count,offset=offset)
 
-@app.route("/images/<string:nome>.jpg")
-def getImage(nome):
-	image_binary=mydb.get_avatar_from_name(nome)
-	response = make_response(image_binary)
-	response.headers['Content-Type'] = 'image/jpeg'
-	#response.headers['Content-Disposition'] = 'attachment; filename=%s.jpg'%(nome) per il download
-	return response
-
 @app.route("/logout")
 @login_required
 def logout():
@@ -234,26 +299,154 @@ def logout():
 @app.route("/user")
 @login_required
 def user_page():
-	nome=None
-	group=None
+	group_id = current_user.group
+	user_id = current_user._id
+	name=None
 	try:
-		nome=mydb.get_user_by_id(current_user.get_id())[1]
-		group=mydb.get_userGroupId(current_user.get_id())
-		gruppi_esistenti= mydb.getGroupsAndComponents()
+		# user_id = current_user.get_id()
+		response = requests.get(url+'/'+str(group_id)+'/'+str(user_id))	# get user info
+		name=json.loads(response.text)['name']
 	except:
 		pass
-	return render_template('user.html',nome=nome,grup=group)
+	journal = json.loads(requests.get(url+'/'+str(group_id)+'/'+str(user_id)+'/gist').text) # get data for user
+	plot = 'img/'+plots.points_line_chart(journal, app.static_folder)
+	tasks = json.loads(requests.get(url+'/'+str(group_id)+'/tasks/list').text) # get tasks
+	response = json.loads(requests.get(url+'/'+str(group_id)).text) # get data for each user
+	members = response['members']
+	print(response)
+	group_name = response['name']
+	return render_template('user.html',name=name,group=group_id,group_name=group_name,members=members,tasks=tasks,time=time.time(),plot=plot)
+
+@app.route("/update_user", methods=['POST'])
+@login_required
+def update_user():
+	group_id = current_user.group
+	user_id = current_user._id
+	try:
+		name = request.form['username']
+	except Exception as e:
+		name = None
+	try:
+		pssw = request.form['password']
+	except Exception as e:
+		pssw = None
+	data={'name':name,'password':pssw}
+	response = requests.get(url+'/'+str(group_id)+'/'+str(user_id), data=None)	# get user info
+	old_name=json.loads(response.text)['name']
+
+	response = requests.post(url+'/'+str(group_id)+'/'+str(user_id)+'/update', data=data)
+
+	os.rename(app.static_folder+'\\img\\'+old_name+'.jpg', app.static_folder+'\\img\\'+name+'.jpg')
+	return redirect(url_for('user_page'))
+
+@app.route("/update_group", methods=['POST'])
+@login_required
+def update_group():
+	group_id = current_user.group
+	user_id = current_user._id
+	# update group name
+	try:
+		group_name = request.form['group_name']
+	except Exception as e:
+		group_name = None
+	if group_name is not None and len(group_name)>0 :
+		response = requests.post(url+'/'+str(group_id)+'/update', data={'name': group_name})
+
+	# add group member
+	try:
+		new_member_name = request.form['new_member_name']
+		new_member_password = request.form['new_member_password']
+		if len(new_member_name) > 0 and len(new_member_password) > 0:
+			data = {'name': new_member_name,
+					'password': new_member_password,
+					'avatar':'foto'}
+			print('new user')
+			response = requests.post(url+'/'+str(group_id)+'/create_user', data=data)
+			print(response.text)
+	except:
+		pass
+
+	# delete group member
+	try:
+		member_id = int(request.form['delete_user'])
+	except Exception as e:
+		member_id = None
+	print('deleting user')
+	response = requests.post(url+'/'+str(group_id)+'/'+str(member_id)+'/destroy')
+	print(response.text)
+	
+	return redirect(url_for('user_page'))
+
+@app.route("/update_task", methods=['POST'])
+@login_required
+def update_task():
+	group_id = current_user.group
+	user_id = current_user._id
+	# update group name
+	try:
+		task_id = int(request.form['task'])
+
+		try:
+			task_name = request.form['task_name']
+		except Exception as e:
+			task_name = ''
+		try:
+			task_value = int(request.form['task_value'])
+		except Exception as e:
+			task_value = ''
+		try:
+			task_frequency = int(request.form['task_frequency'])
+		except Exception as e:
+			task_frequency = ''
+
+		print(str(task_id)+'  ------------')
+		if task_id == 0:
+			# new task
+			if(len(task_name) > 0 and 
+			   task_value and 
+			   task_frequency > 0):
+				data = {'name': task_name,
+						'value': task_value,
+						'frequency': task_frequency}
+				response = requests.post(url+'/'+str(group_id)+'/tasks/create', data=data)
+		else:
+			data = {'id': task_id,
+					'name': task_name,
+					'value': task_value,
+					'frequency': task_frequency}
+			response = requests.post(url+'/'+str(group_id)+'/tasks/update', data=data)
+
+	except Exception as e:
+		print(e)
+
+	return redirect(url_for('user_page'))
+
+@app.route("/delete_group", methods=['GET'])
+@login_required
+def delete_group():
+	group_id = current_user.group
+	user_id = current_user._id
+	response = requests.post(url+'/'+str(group_id)+'/destroy')
+
+	# TODO
+	# also delete members and their data
+
+	return redirect(url_for('login'))
 
 @app.route("/change-avatar",methods=['POST'])
 @login_required
 def update_avatar():
+	group_id = current_user.group
+	user_id = current_user._id
+	name = json.loads(requests.get(url+'/'+str(group_id)+'/'+str(user_id), data=None).text)['name']	# get user info
 	try:
 		for f in request.files:
 			file = request.files[f]	
 			print(file)
-			ok=mydb.change_avatar(file, current_user.get_id())
-			if not ok:
-				raise Exception('error')
+			file.save(app.static_folder+'\\img\\'+name+'.jpg')
+			# ok=mydb.change_avatar(file, current_user.get_id())
+			# if not ok:
+			# 	raise Exception('error')
 
 	except:
 		return json.dumps({'success':False,"status": "error",'msg': "Error,change file"}), 403, {'ContentType':'application/json'}

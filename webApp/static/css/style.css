@@ -105,3 +105,18 @@ td{
 #addform {
 height: 330px !important;
 }
+
+#navbar{
+	position: fixed !important;
+	top: 0;
+	z-index: 10000;
+}
+
+.container,
+.margin-top{
+	margin-top: 70px;
+}
+
+.plot{
+	filter: invert(0.86);
+}

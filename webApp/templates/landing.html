@@ -13,17 +13,17 @@
 <body>
 {%include 'navbar_sidebar.html'%}
 	<div class="row margin-top">
-		<div class="col s12 m6 offset-m3">
+		<div class="col s12 m8 offset-m2 l4 offset-l2">
 			<div class="card">
 				<div class="card-content white-text">
-					<span class="card-title">Login</span>
+					<span class="card-title center">Login</span>
 					{% if error %}
 					<span class="red-text"><strong>Error:</strong> {{ error }}</span>
 					{% else %}
 					{% if wrong %}
 					<span class="red-text"><strong>Error:</strong> {{ wrong }}</span>
 					{%endif%}
-					<form class="login-form" method="post" action="/login">
+					<form class="login-form" method="POST" action="/login">
 						<div class='row margin'>
 							<div class='input-field col s12'>
 								<i class="material-icons prefix">account_circle</i>
@@ -39,18 +39,39 @@
 								<label for='password'>Password</label>
 							</div>
 						</div>
-						<div class="row">          
+						<div class="row center">          
 				              <input type="checkbox" id="remember-me-s" name="remember-me">
 				              <label for="remember-me-s">Remember me</label>
 
 				        </div>
 						<center>
 							<div class='row'>
-								<button type='submit' name='btn_login' class='col s12 btn btn-large waves-effect indigo'>Login</button>
+								<button type='submit' name='btn_login' class='col s12 btn btn-large waves-effect blue'>Login</button>
 							</div>
 						</center>
 					</form>
 					{%endif%}
+				</div>
+			</div>
+		</div>
+		<div class="col s12 m8 offset-m2 l4">
+			<div class="card">
+				<div class="card-content white-text">
+					<span class="card-title center">Sign-up</span>
+					<form class="signup-form" method="GET" action="/signup">
+						<div class='row margin'>
+							<div class='input-field col s12'>
+								<i class="material-icons prefix">group</i>
+								<input  type='text' name='group_name' id='email' class="validate">
+								<label for='email'>Group Name</label>
+							</div>
+						</div>
+						<center>
+							<div class='row'>
+								<button type='submit' class='col s12 btn btn-large waves-effect blue'>Create Group</button>
+							</div>
+						</center>
+					</form>
 				</div>
 			</div>
 		</div>

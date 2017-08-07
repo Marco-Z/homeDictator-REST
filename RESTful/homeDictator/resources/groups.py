@@ -13,17 +13,18 @@ class get_group(Resource):
 		group = Group.query.filter_by(id=group_id).first()
 		if group is None:
 			return {'message': 'No such group'}
-		members = (db.session.query(Journal.user,
-								   func.sum(Task.value).label('points'),
-								   User.name,
-								   User.balance,
-								   User.group
+		members = (db.session.query(User.name,
+									User.id,
+									func.sum(Task.value).label('points'),
+									User.name,
+									User.balance,
+									User.group
 								  )
-							 .join(Task)
-							 .join(User)
-							 .group_by(Journal.user))
-		if members is None: 
-			return {'message': 'No members for this group'} 
+							 .filter_by(group=group_id)
+							 .outerjoin(Journal)
+							 .outerjoin(Task)
+							 .group_by(User.id)
+							 .order_by(func.sum(Task.value).desc()))
 		group.members = _all(members) 
 		return group.toJSON()
 
@@ -42,7 +43,7 @@ class update(Resource):
 			if group is None:
 				return {'message': 'No such group'}
 			name = request.form['name']
-			if name is not None:
+			if name is not None and len(name)>0:
 				group.name = name
 				db.session.commit()
 				return group.toJSON()

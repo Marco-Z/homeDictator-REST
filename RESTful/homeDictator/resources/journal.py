@@ -22,6 +22,7 @@ class list(Resource):
 							 .join(Task)
 							 .join(User)
 							 .filter_by(group=group_id)
+							 .order_by(Journal.date.desc())
 							 .offset(offset)
 							 .limit(count))
 		count = (db.session.query(func.count(Journal.id).label('number'))

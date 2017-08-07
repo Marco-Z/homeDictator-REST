@@ -36,15 +36,18 @@ class update(Resource):
 			else:
 				try:
 					name = request.form['name']
-					task.name = name
+					if len(name)>0:
+						task.name = name
 				except: pass
 				try:
 					frequency = request.form['frequency']
-					task.frequency = frequency
+					if len(frequency)>0:
+						task.frequency = frequency
 				except: pass
 				try:
 					value = request.form['value']
-					task.value = value
+					if len(value)>0:
+						task.value = value
 				except: pass
 				try:
 					db.session.commit()

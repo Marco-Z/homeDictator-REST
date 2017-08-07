@@ -1,6 +1,7 @@
 from flask import request
 from flask_restful import Resource, reqparse
-from homeDictator.common.db import db, User, Journal
+from homeDictator.common.db import db, User, Journal, Task, _all, _first
+from sqlalchemy.sql.functions import func
 
 class _get(Resource):
 	def get(self, group_id, user_id):
@@ -14,10 +15,9 @@ class _get(Resource):
 			return user.toJSON()
 
 class search(Resource):
-	def post(self, group_id):
+	def post(self):
 		name = request.form['name']
-		user = (User.query.filter_by(group=group_id) 
-						  .filter_by(name=name)
+		user = (User.query.filter_by(name=name)
 						  .first())
 		if user is None:
 			return {'message': 'no such user in this group'}
@@ -32,6 +32,17 @@ class journal(Resource):
 								   .filter_by(group=group_id)
 								   .all())
 		return [activity.toJSON() for activity in activities]
+
+class gist(Resource):
+	def get(self, group_id, user_id):
+		journal = (db.session.query(Journal.date,
+									func.sum(Task.value).label('points'))
+							 .join(Task)
+							 .join(User)
+							 .filter_by(id=user_id)
+							 .group_by(Journal.date) 
+							 .order_by(Journal.date))
+		return _all(journal)
 
 class create(Resource):
 	def post(self, group_id):
@@ -61,15 +72,18 @@ class update(Resource):
 			else:
 				try:
 					name = request.form['name']
-					user.name = name
+					if len(name)>0:
+						user.name = name
 				except: pass
 				try:
 					password = request.form['password']
-					user.password = password
+					if len(password)>0:
+						user.password = password
 				except: pass
 				try:
 					avatar = request.form['avatar']
-					user.avatar = avatar
+					if len(avatar)>0:
+						user.avatar = avatar
 				except: pass
 				try:
 					db.session.commit()

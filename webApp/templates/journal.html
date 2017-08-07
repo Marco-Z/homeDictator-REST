@@ -11,7 +11,7 @@
 </head>
 <body>
 	{%include 'navbar_sidebar.html'%}
-	<div class="row">
+	<div class="row margin-top">
 		<div class="col s12">
 			<div class="card">
 				<div class="card-content white-text">
@@ -19,11 +19,28 @@
 					<span>{{error}}</span>
 					{%endif%}
 					<form action="/manage_journal" method="POST">
-						<span class="card-title" style="display:inline-block;">Attività svolte:</span>
+						<span class="card-title" style="display:inline-block;">Performed Activities:</span>
 						<button class="btn waves-effect waves-light red right" type="submit" name="action">
-							<i class="material-icons">delete_forever</i>Cancella</button>
+							<i class="material-icons">delete_forever</i>Delete</button>
 						</button>
-						<table>
+						<table class="flow-text">
+						<thead>
+							<tr>
+								<th>
+								Select
+								</th>
+								<th>
+								User
+								</th>
+								<th>
+								Date
+								</th>
+								<th>
+								Description
+								</th>
+							</tr>
+						</thead>
+						<tbody>
 
 							{% for entry in journal %}
 							<tr>
@@ -50,6 +67,7 @@
 								</td>
 							</tr>
 							{% endfor %}
+							</tbody>
 						</table>
 					</form>
 				</div>

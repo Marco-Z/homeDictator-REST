@@ -1,0 +1,93 @@
+<!doctype html>
+<head>
+	<title>Group Creation</title>
+	{%include 'links.html'%}
+	<script src="{{ url_for('static',filename='js/signup.js')}}"></script>
+</head>
+<body>
+	{%include 'navbar_sidebar.html'%}
+	<div class="container">
+		<!-- Page Content goes here -->
+		<div class="row">
+			<div id="title" class="col s12">
+				<h3 class="grey-darken-3 white-text center" >
+					{{ group_name }} group
+				</h3>
+			</div>
+
+			<div class="card-content white-text center-align row ">
+				<div id="group" class="col s12">
+					<div class="row white-text">
+
+						<form id="new_group" action="/signup" method="POST"> 
+							<div id="group" class='card'> 
+								<div class='card-content white-text'> 
+									<div class='row'> 
+										<h5>Group</h5> 
+									</div> 
+									<div class='row'> 
+										<div class='input-field col s12 m6 offset-m3'> 
+											<input id='group_name' name="group_name" type='text' class='validate' value="{{ group_name }}"> 
+											<label for='group_name'>Group Name</label> 
+										</div> 
+									</div> 
+								</div> 
+							</div> 
+							<div id="members" class='card'> 
+								<div class='card-content white-text'> 
+									<div class='row'> 
+										<h5>Members</h5> 
+									</div> 
+									<div class='row'> 
+										<div class='input-field col s12 m6 offset-m3'> 
+											<input id='member_name_1' name='member_name_1' class="member" type='text' class='validate'> 
+											<label for='member_name_1'>Member Name</label> 
+										</div> 
+									</div> 
+									<div class='row'> 
+										<div class='input-field col s12 m6 offset-m3'> 
+											<input id='member_name_2' name='member_name_2' class="member" type='text' class='validate'> 
+											<label for='member_name_2'>Member Name</label> 
+										</div> 
+									</div> 
+									<div class='row'> 
+										<a id='add_member' class='btn-floating btn-large waves-effect waves-light blue'><i class='material-icons'>add</i></a> 
+									</div>
+								</div> 
+							</div> 
+							<div id="tasks" class='card'> 
+								<div class='card-content white-text'> 
+									<div class='row'> 
+										<h5>Tasks <i class="material-icons tooltipped white-text" data-tooltip="Frequency is the number of days between an activity and the next of the same type" data-delay="0">info_outline</i></h5>
+
+									</div> 
+									<div class="row">
+										<div class="input-field col s10 offset-s1 m4 offset-m1">
+											<input id="task_name_1" name="task_name_1" type="text" class="validate" >
+											<label for="task_name_1">Task Name</label>
+										</div>
+										<div class="input-field col s10 offset-s1 m3">
+											<input id="task_value_1" name="task_value_1" type="number" class="validate" >
+											<label for="task_value_1">Task Value</label>
+										</div>
+										<div class="input-field col s10 offset-s1 m3">
+											<input id="task_frequency_1" name="task_frequency_1" type="number" class="validate" >
+											<label for="task_frequency_1">Task Frequency</label>
+										</div>
+									</div>
+									<div class='row'> 
+										<a id='add_task_entry' class='btn-floating btn-large waves-effect waves-light blue'><i class='material-icons'>add</i></a> 
+									</div>
+								</div> 
+							</div> 
+							<button class="btn waves-effect waves-light blue right" id="submit">Submit 
+								<i class="material-icons right">send</i> 
+							</button> 
+						</form> 
+					</div>
+				</div>
+			</div>
+
+		</div>
+	</div>
+</body>
