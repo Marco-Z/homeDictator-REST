@@ -49,7 +49,7 @@ class gist(Resource):
 							 .filter_by(id=user_id)
 							 .group_by(Journal.date) 
 							 .order_by(Journal.date))
-		return {'user': user_id,'history': _all(journal)}
+		return {'user': user_id,'gist': _all(journal)}
 
 class create(Resource):
 	def post(self, group_id):

@@ -124,3 +124,6 @@ height: 330px !important;
 .plot{
 	filter: invert(0.86);
 }
+.margin{
+	margin: 10px;
+}

@@ -516,7 +516,7 @@ example:
 -------------------------------
 ### /⟨int:group_id⟩/shopping/write
 
-Given a group id encoded in the URL, and the following parameters as form values:
+Given a group id encoded in the URL and the following parameters as form values:
 -   `list`: mandatory, shopping list
 it updates the shopping in the database.
 It returns a string containing the updated shopping list for that group.
@@ -551,7 +551,9 @@ example:
 -------------------------------
 ### /⟨int:group_id⟩/tasks/destroy
 
-Given a group id encoded in the URL, it deletes the task entry from the database.
+Given a group id encoded in the URL and the following parameters as form values:
+-   `id`: mandatory, id of the task
+it deletes the task entry from the database.
 It returns a JSON string containing the information about the deleted task:
 -   `id` of the task
 -   `name` of the task

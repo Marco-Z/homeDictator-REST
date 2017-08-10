@@ -1,6 +1,6 @@
 from flask import request
 from flask_restful import Resource, reqparse
-from homeDictator.common.db import db, User, Task
+from homeDictator.common.db import db, User, Task, Journal
 
 class list(Resource):
 	def get(self, group_id):
@@ -82,6 +82,8 @@ class destroy(Resource):
 						  .first())
 		if task is not None:
 			db.session.delete(task)
+			(Journal.query.filter_by(task=_id)
+						  .delete())
 			db.session.commit()
 			return task.toJSON()
 		else:

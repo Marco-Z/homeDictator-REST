@@ -378,7 +378,7 @@ def update_group():
 def update_task():
 	group_id = current_user.group
 	user_id = current_user._id
-	# update group name
+
 	try:
 		task_id = int(request.form['task'])
 
@@ -415,6 +415,26 @@ def update_task():
 		print(e)
 
 	return redirect(url_for('user_page'))
+
+@app.route("/delete_task", methods=['POST'])
+@login_required
+def delete_task():
+	group_id = current_user.group
+	user_id = current_user._id
+
+	try:
+		task_id = int(request.form['task'])
+
+		if task_id > 0:
+			# delete task
+			data = {'id': task_id}
+			response = requests.post(url+'/'+str(group_id)+'/tasks/destroy', data=data)
+
+	except Exception as e:
+		print(e)
+
+	return redirect(url_for('user_page'))
+
 
 @app.route("/delete_group", methods=['GET'])
 @login_required

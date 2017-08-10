@@ -84,7 +84,7 @@ class to_do(Resource):
 				try:
 					res = next((item for item in last if item['name'] == t['name']))
 					d = dt.datetime.strptime(res['date'], "%Y-%m-%d").date()
-					if (dt.date.today() - d).days > res['frequency']:
+					if (dt.date.today() - d).days < res['frequency']:
 						todo.remove(t)
 				except: pass
 		return todo
