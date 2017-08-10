@@ -1,0 +1,7 @@
+flask
+flask-restful
+sqlalchemy
+flask-sqlalchemy
+flask-login
+flask-openid
+requests

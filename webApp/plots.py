@@ -1,12 +1,12 @@
 import json
 import requests
 from requests.auth import HTTPBasicAuth
-from PIL import Image
-from io import BytesIO
+from functools import lru_cache
  
-auth = HTTPBasicAuth('Marco-Z', '0kN05xPfvSSlgS2vW2cI')
+auth = HTTPBasicAuth('Marco-Z', 'mEmCZp7RWjgKujDXqVqG')
 headers = {'Plotly-Client-Platform': 'python'}
 
+@lru_cache(maxsize=32)
 def points_bar_chart(people,static_path):
 	x = []
 	y = []
@@ -39,17 +39,15 @@ def points_bar_chart(people,static_path):
 
 	r = requests.post('https://api.plot.ly/v2/images', auth=auth, headers=headers, json=payload)
 
-	file = 'plot1.png'
+	file = 'plots/plot'+str(people.__hash__())+'.png'
 	try:
-		i = Image.open(BytesIO(r.content))
-		i.save(static_path+'\\img\\'+file, 'png')
+		with open(static_path+'/img/'+file, 'wb') as i:
+			i.write(r.content)
 	except:
 		return ''
 	return file
 
-
-
-
+@lru_cache(maxsize=32)
 def points_line_chart(data,static_path):
 	x = []
 	y = []
@@ -64,7 +62,8 @@ def points_line_chart(data,static_path):
 				{
 				'x': x, 
 				'y': y, 
-				'marker': {'color': 'rgb(250, 155, 80)'}
+				'marker': {'color': 'rgb(250, 155, 80)'}, 
+				'type': 'bar'
 				}
 			],
         	"layout": {
@@ -81,11 +80,24 @@ def points_line_chart(data,static_path):
 
 	r = requests.post('https://api.plot.ly/v2/images', auth=auth, headers=headers, json=payload)
 
-	file = 'plot2.png'
+	file = 'plots/plot'+str(data.__hash__())+'.png'
 	try:
-		i = Image.open(BytesIO(r.content))
-		i.save(static_path+'\\img\\'+file, 'png')
-	except:
+		with open(static_path+'/img/'+file, 'wb') as i:
+			i.write(r.content)
+	except Exception as e:
 		return ''
 
 	return file
+
+class HList(list):
+	def __hash__(self):
+		hstr = ''
+		try:
+			for el in self:
+				hstr += el['name']
+		except: pass
+		try:
+			for el in self:
+				hstr += el['date']
+		except: pass
+		return hash(hstr)

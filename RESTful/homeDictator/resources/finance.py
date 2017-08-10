@@ -4,15 +4,6 @@ from flask_restful import Resource, reqparse
 from homeDictator.common.db import db, Finance, User, _all, _first
 from sqlalchemy.sql.functions import func
 
-class balance(Resource):
-	def get(self, group_id):
-		users = (User.query.filter_by(group=group_id) 
-						   .order_by(User.name) 
-						   .all()) 
-		if users is None:
-			return {'message': 'error'}
-		return [user.toJSON() for user in users]
-
 class list(Resource):
 	def get(self, group_id):
 		parser = reqparse.RequestParser()
@@ -56,21 +47,3 @@ class create(Resource):
 		db.session.add(movement)
 		db.session.commit()
 		return movement.toJSON()
-
-class destroy(Resource):
-	def post(self, group_id):
-		try:
-			_id = int(request.form['id'])
-		except Exception:
-			return {'message': 'invalid request'}
-		movement = (Finance.query.filter_by(id=_id)
-								 .join(User)
-								 .filter_by(group=group_id)
-								 .first())
-		if movement is not None:
-			db.session.delete(movement)
-			db.session.commit()
-			return movement.toJSON()
-		else:
-			return {'message': 'no movement'}
-

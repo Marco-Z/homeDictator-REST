@@ -1,7 +1,8 @@
 from flask import request
 from flask_restful import Resource, reqparse
-from homeDictator.common.db import db, User, Journal, Task, _all, _first
+from homeDictator.common.db import db, User, Journal, Finance, Task, _all, _first
 from sqlalchemy.sql.functions import func
+from werkzeug.security import generate_password_hash
 
 class _get(Resource):
 	def get(self, group_id, user_id):
@@ -26,12 +27,18 @@ class search(Resource):
 
 class journal(Resource):
 	def get(self, group_id, user_id):
-		activities = (Journal.query.filter_by(user=user_id)
-								   .join(User)
-								   .order_by(User.name) 
-								   .filter_by(group=group_id)
-								   .all())
-		return [activity.toJSON() for activity in activities]
+		activities = _all(db.session.query(Journal.id,
+										   Journal.date,
+										   User.name.label('user'),
+										   Task.name.label('task'),
+										   Journal.description
+										  )
+									.join(Task)
+									.join(User)
+									.filter_by(group=group_id)
+									.filter_by(id=user_id))
+
+		return activities
 
 class gist(Resource):
 	def get(self, group_id, user_id):
@@ -42,21 +49,25 @@ class gist(Resource):
 							 .filter_by(id=user_id)
 							 .group_by(Journal.date) 
 							 .order_by(Journal.date))
-		return _all(journal)
+		return {'user': user_id,'history': _all(journal)}
 
 class create(Resource):
 	def post(self, group_id):
+		default = generate_password_hash('muschio')
 		name = request.form['name']
-		password = request.form['password']
-		avatar = request.form['avatar']
+		try:
+			password = request.form['password']
+			if len(password) == 0:
+				password = default
+		except:
+			password = default
 		group = group_id
 		if (name is None or 
 		    password is None or 
-		    avatar is None or 
 		    group is None):
 		   return {'message': 'invalid user'}
 		else:
-			user = User(name, password, avatar, group)
+			user = User(name, password, group)
 			db.session.add(user)
 			db.session.commit()
 			return user.toJSON()
@@ -78,12 +89,7 @@ class update(Resource):
 				try:
 					password = request.form['password']
 					if len(password)>0:
-						user.password = password
-				except: pass
-				try:
-					avatar = request.form['avatar']
-					if len(avatar)>0:
-						user.avatar = avatar
+						user.password = generate_password_hash(password)
 				except: pass
 				try:
 					db.session.commit()
@@ -122,6 +128,8 @@ class destroy(Resource):
 			return {'message': 'no such user in this group'}
 		else:
 			db.session.delete(user)
+			f = Finance.query.filter_by(user=user_id).delete()
+			j = Journal.query.filter_by(user=user_id).delete()
 			db.session.commit()
 			return user.toJSON()
 

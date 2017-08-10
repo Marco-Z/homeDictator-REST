@@ -11,7 +11,11 @@ body{
 	}
 
 }
-
+@media only screen and (max-width: 500px){
+	table.flow-text {
+		font-size: 14px !important;
+	}
+}
 .card {
 	background-color: rgba(0,0,0,.15);
 }

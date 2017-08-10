@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 import datetime as dt
 import json
+from sqlalchemy.orm import relationship
 
 db = SQLAlchemy()
 
@@ -34,6 +35,8 @@ class Finance(db.Model):
 	date = db.Column(db.Date)
 	description = db.Column(db.Text)
 
+	user_id = relationship("User", single_parent=True)
+
 	def __init__(self, user, amount, date, description):
 		self.user = user
 		self.amount = amount
@@ -51,7 +54,7 @@ class Finance(db.Model):
 class Group(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(50), unique=True)
-	shopping_list = db.Column(db.Text)
+	shopping_list = db.Column(db.Text, default='')
 	members = []
 
 	def __init__(self, name):
@@ -70,6 +73,8 @@ class Journal(db.Model):
 	date = db.Column(db.Date)
 	description = db.Column(db.Text)
 
+	user_id = relationship("User", single_parent=True)
+	task_id = relationship("Task", single_parent=True)
 	def __init__(self, user, task, date, description):
 		self.user = user
 		self.task = task
@@ -91,6 +96,8 @@ class Task(db.Model):
 	value = db.Column(db.Integer)
 	group = db.Column(db.Integer, db.ForeignKey('group.id'))
 
+	group_id = relationship("Group", single_parent=True)
+
 	def __init__(self, name, frequency, value, group):
 		self.name = name
 		self.frequency = frequency
@@ -109,21 +116,20 @@ class User(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(50), unique=True)
 	balance = db.Column(db.Float, default=0.0)
-	password = db.Column(db.String(64))
-	avatar = db.Column(db.String(64))
+	password = db.Column(db.String(66))
 	group = db.Column(db.Integer, db.ForeignKey('group.id'))
 
-	def __init__(self, name, password, avatar, group):
+	group_id = relationship("Group", single_parent=True)
+
+	def __init__(self, name, password, group):
 		self.name = name
 		self.password = password
-		self.avatar = avatar
 		self.group = group
 
 	def toJSON(self):
-		return ({'_id': self.id, 
+		return ({'id': self.id, 
 				'name': self.name,
 				'password': self.password,
-				'avatar': self.avatar,
 				'balance': self.balance,
 				'group': self.group
 				})

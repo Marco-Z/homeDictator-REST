@@ -3,6 +3,7 @@ import datetime as dt
 from flask_restful import Resource, reqparse
 from homeDictator.common.db import db, User, Journal, Task, _all, _first
 from sqlalchemy.sql.functions import func
+import copy
 
 class list(Resource):
 	def get(self, group_id):
@@ -16,6 +17,7 @@ class list(Resource):
 		except: count = 10
 		activities = (db.session.query(Journal.id,
 									   Journal.date,
+									   Journal.description,
 									   User.name.label('user'),
 									   Task.name.label('task'),
 								  )
@@ -40,39 +42,67 @@ class _type(Resource):
 		except: offset = 0
 		try: count = int(args['count'])
 		except: count = 10
-		activities = (Journal.query.order_by(Journal.date.desc())
-								   .filter_by(task=_type)
-								   .join(User)
-								   .filter_by(group=group_id)
-								   .offset(offset)
-								   .limit(count)
-								   .all())
-		return [activity.toJSON() for activity in activities]
+		activities = (db.session.query(Journal.id,
+									   Journal.date,
+									   Journal.description,
+									   User.name.label('user'),
+									   Task.name.label('task'),
+								  )
+								.order_by(Journal.date.desc())
+								.filter_by(task=_type)
+								.join(Task)
+								.join(User)
+								.filter_by(group=group_id)
+								.offset(offset)
+								.limit(count))
+		return _all(activities)
 
 
 class to_do(Resource):
 	def get(self, group_id):
-		points = (db.session.query(Journal.task,
-								   Journal.date,
-								   Task.name
-								  )
-							.filter(dt.date.today() - Journal.date > Task.frequency )
-							.join(Task)
-							.group_by(Journal.task)
-							)
+		tasks = _all(db.session.query(Task.name,
+									  Task.value,
+									  Task.group,
+									  Task.frequency)
+							   .filter_by(group=group_id))
+		last  = _all(db.session.query(Journal.id,
+									  Task.name,
+									  Task.frequency,
+									  func.max(Journal.date).label('date')
+									  )
+							   .join(Task)
+							   .filter_by(group=group_id)
+							   .group_by(Task.name)
+							   .order_by(Journal.date.desc()))
+		todo = copy.deepcopy(tasks)
+		for t in tasks:
+			if t['value'] < 0:
+				todo.remove(t)
+			elif t['frequency'] < 0:
+				todo.remove(t)
+			else:
+				try:
+					res = next((item for item in last if item['name'] == t['name']))
+					d = dt.datetime.strptime(res['date'], "%Y-%m-%d").date()
+					if (dt.date.today() - d).days > res['frequency']:
+						todo.remove(t)
+				except: pass
+		return todo
 
-		return _all(points)
-
-# TO FIX
-# not ordered
 class last(Resource):
 	def get(self, group_id):
-		activities = (Journal.query.order_by(Journal.date.desc())
-								   .group_by(Journal.task)
-								   .join(User)
-								   .filter_by(group=group_id)
-								   .all())
-		return [activity.toJSON() for activity in activities]
+		tasks = (db.session.query(Journal.id,
+								  Task.name.label('task'),
+								  User.name.label('user'),
+								  Journal.description,
+								  func.max(Journal.date).label('date')
+								  )
+						   .join(User)
+						   .join(Task)
+						   .group_by(Task.name)
+						   .order_by(Journal.date.desc()))
+
+		return _all(tasks)
 
 class create(Resource):
 	def post(self, group_id):

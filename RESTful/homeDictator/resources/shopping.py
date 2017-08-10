@@ -6,7 +6,6 @@ import json
 from sqlalchemy.sql.functions import func
 
 class read(Resource):
-	# @lru_cache(maxsize=32)
 	def get(self, group_id):
 		response = db.session.query(Group.shopping_list).filter_by(id=group_id).one()
 		return(response[0])
@@ -21,10 +20,9 @@ class write(Resource):
 			group = Group.query.filter_by(id=group_id).first()
 			if group is None:
 				return {'message': 'No such group'}
-			shopping = request.form['list']
 			if shopping is not None:
 				group.shopping_list = shopping
 				db.session.commit()
-				return group.toJSON()
+				return shopping
 		except Exception as e:
 			return {'message': str(e)}

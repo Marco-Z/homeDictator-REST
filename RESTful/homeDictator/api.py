@@ -6,9 +6,7 @@ app = Flask(__name__)
 api = Api(app)
 
 api.add_resource(finance.list, '/<int:group_id>/finance/list', endpoint='finance/list')
-api.add_resource(finance.balance, '/<int:group_id>/finance/balance')
 api.add_resource(finance.create, '/<int:group_id>/finance/create', endpoint='finance/create')
-api.add_resource(finance.destroy, '/<int:group_id>/finance/destroy', endpoint='finance/destroy')
 
 api.add_resource(groups.get_group, '/<int:group_id>')
 api.add_resource(groups.update, '/<int:group_id>/update', endpoint='group/update')

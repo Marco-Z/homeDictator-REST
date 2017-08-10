@@ -1,7 +1,7 @@
 class User(object):
 	def __init__(self, usr):
-		self._id = int(usr['_id'])
-		self.user_id = str(usr['group'])+'_'+str(usr['_id'])
+		self._id = int(usr['id'])
+		self.user_id = str(usr['group'])+'_'+str(usr['id'])
 		self.username = usr['name']
 		self.password = usr['password']
 		self.balance = float(usr['balance'])

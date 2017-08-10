@@ -27,7 +27,7 @@
 			<div class="col s12">
 				<div class="card center-align">
 					<div class="card-content white-text center-align">
-						<img class="responsive-img plot" src="{{ url_for('static',filename=plot)}}">
+						<img class="responsive-img plot" src="{{ url_for('static',filename=plot)}}?dummy={{time}}">
 					</div>
 				</div>
 			</div>
@@ -38,7 +38,7 @@
 
 					<div class="card-content white-text center-align row ">
 						<div id="user-title" class="col s12 m4">
-							<img class="responsive-img center-align circle" id="userpage-img" src="{{ url_for('static',filename='img/'+name+'.jpg')}}?dummy={{time}}">
+							<img class="responsive-img center-align circle" id="userpage-img" src="{{ url_for('static',filename='img/users/'+current_user.get_id()+'.jpg')}}?dummy={{time}}">
 
 							<div class="row">
 								<div class="col s12 center-align">

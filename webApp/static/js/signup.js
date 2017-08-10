@@ -13,7 +13,7 @@ $(document).ready(function(){
   }); 
  
   var n = 2; 
-  var m = 1; 
+  var m = $('#add_task_entry').attr('entries')-1; 
   $('#add_member').on('click', function(){ 
     var el = "<div class='row'>"+ 
     "<span>"+ 

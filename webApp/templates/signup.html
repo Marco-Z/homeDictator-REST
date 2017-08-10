@@ -61,22 +61,27 @@
 										<h5>Tasks <i class="material-icons tooltipped white-text" data-tooltip="Frequency is the number of days between an activity and the next of the same type" data-delay="0">info_outline</i></h5>
 
 									</div> 
+									{% for task in tasks %}
 									<div class="row">
+										<span>
+											<a id='remove' class='btn-floating btn waves-effect waves-light red'><i class='material-icons'>clear</i></a>
+										</span>
 										<div class="input-field col s10 offset-s1 m4 offset-m1">
-											<input id="task_name_1" name="task_name_1" type="text" class="validate" >
-											<label for="task_name_1">Task Name</label>
+											<input id="task_name_{{ loop.index0 }}" name="task_name_{{ loop.index0 }}" type="text" class="validate" value="{{ task['name'] }}">
+											<label for="task_name_{{ loop.index0 }}">Task Name</label>
 										</div>
 										<div class="input-field col s10 offset-s1 m3">
-											<input id="task_value_1" name="task_value_1" type="number" class="validate" >
-											<label for="task_value_1">Task Value</label>
+											<input id="task_value_{{ loop.index0 }}" name="task_value_{{ loop.index0 }}" type="number" class="validate" value="{{ task['value'] }}">
+											<label for="task_value_{{ loop.index0 }}">Task Value</label>
 										</div>
 										<div class="input-field col s10 offset-s1 m3">
-											<input id="task_frequency_1" name="task_frequency_1" type="number" class="validate" >
-											<label for="task_frequency_1">Task Frequency</label>
+											<input id="task_frequency_{{ loop.index0 }}" name="task_frequency_{{ loop.index0 }}" type="number" class="validate" value="{{ task['frequency'] }}">
+											<label for="task_frequency_{{ loop.index0 }}">Task Frequency</label>
 										</div>
 									</div>
+									{% endfor %}
 									<div class='row'> 
-										<a id='add_task_entry' class='btn-floating btn-large waves-effect waves-light blue'><i class='material-icons'>add</i></a> 
+										<a  entries='{{ tasks|length }}'' id='add_task_entry' class='btn-floating btn-large waves-effect waves-light blue'><i class='material-icons'>add</i></a> 
 									</div>
 								</div> 
 							</div> 

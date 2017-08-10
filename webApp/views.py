@@ -1,12 +1,13 @@
 from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash, make_response, session, escape, json
 from datetime import date
-from subprocess import Popen
 import os, time
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_openid import OpenID
 import requests
 from user import User
 import plots
+import configparser
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
@@ -37,11 +38,12 @@ def index(error=None):
 		return render_template('landing.html')
 
 	name = json.loads(requests.get(url+'/'+str(group_id)+'/'+str(user_id), data=None).text)['name']	# get user info
-	users = json.loads(requests.get(url+'/'+str(group_id), data=None).text)['members'] # get data for each user
+	res = json.loads(requests.get(url+'/'+str(group_id), data=None).text) # get data for each user
+	users = res['members']
 	tasks = json.loads(requests.get(url+'/'+str(group_id)+'/tasks/list', data=None).text) # get tasks
 	todo =  json.loads(requests.get(url+'/'+str(group_id)+'/journal/to_do', data=None).text) # get tasks to do
 
-	plot = 'img/'+plots.points_bar_chart(users, app.static_folder)
+	plot = 'img/'+plots.points_bar_chart(plots.HList(users), app.static_folder)
 
 	return render_template('index.html', users=users, tasks=tasks, todo=todo, name=name, time=time.time(), plot=plot)
 
@@ -49,7 +51,19 @@ def index(error=None):
 def signup(error=None):
 	if request.method == 'GET':
 		group_name = request.args['group_name']
-		return render_template('signup.html',group_name=group_name)
+
+		tasks = []
+		config = configparser.ConfigParser()
+		config.read('tasks.ini')
+		a = config.options('points')
+
+		for ac in a:
+			row = {'name': ac}
+			row['value'] = int(config['points'][ac])
+			row['frequency'] = int(config['frequency'][ac])
+			tasks.append(row)
+
+		return render_template('signup.html',group_name=group_name, tasks=tasks)
 	elif request.method == 'POST':
 		def search(dictionary, substr):
 			result = []
@@ -60,7 +74,7 @@ def signup(error=None):
 
 		# group
 		group_name = request.form['group_name']
-		response = requests.post(url+'/create_group', data={'group':group_name})
+		response = requests.post(url+'/create_group', data={'name':group_name})
 		print(json.loads(response.text))
 		group_id = json.loads(response.text)['id']
 
@@ -70,10 +84,7 @@ def signup(error=None):
 		members = search(request.form.to_dict(), field)
 		for member in members:
 			for key in member:
-				user = {'name': member[key],
-						'password': 'muschio',
-						'avatar': 'photo'}
-				response = requests.post(url+'/'+str(group_id)+'/create_user', data=user)
+				response = requests.post(url+'/'+str(group_id)+'/create_user', data={'name': member[key]})
 
 		# tasks
 		n = []
@@ -127,8 +138,6 @@ def pay():
 	group_id = current_user.group
 	user_id = current_user._id
 	name=""
-	print('----------------'+'----------------')
-	print(request.form)
 	try:
 		u = request.form['user']
 		amount = float(request.form['amount'])
@@ -141,9 +150,7 @@ def pay():
 			n = user['name']
 			weight[n] = int(request.form[n])
 			somma = somma + weight[n]
-		print('----------------'+u+'----------------')
 		response = requests.post(url+'/'+str(group_id)+'/'+u+'/update_balance', data={'delta':amount})
-		print(users)
 		for user in users:
 			_id = user['id']
 			n = user['name']
@@ -155,7 +162,6 @@ def pay():
 				'description': desc
 				}
 		response = requests.post(url+'/'+str(group_id)+'/finance/create', data=data)
-		print(response.text)
 		return redirect(url_for('index'))
 	except Exception as e:
 		return str(e)
@@ -190,7 +196,6 @@ def manage_journal():
 	if request.method == 'POST':
 		try:
 			ac = int(request.form['activity'])
-			print(ac)
 			response = requests.post(url+'/'+str(group_id)+'/journal/destroy', data={'id': ac}) # delete the activity
 		except:
 			error="Errore nel cancellare l'attivita', riprovare"
@@ -220,12 +225,9 @@ def login():
 				remember=bool(request.form['remember-me'])
 			except:
 				remember=False
-			print('im here')
 			response = requests.post(url+'/search', data={'name': user})	# search user
-			print('found')
-			print(json.loads(response.text))
 			usr=User(json.loads(response.text))
-			if usr and usr.password == pssw:
+			if usr and check_password_hash(usr.password,pssw):
 				try:
 					res = login_user(usr,remember=remember)
 				except Exception as e:
@@ -237,10 +239,8 @@ def login():
 			wrong="Username o password sbagliati"
 			return render_template('login.html',wrong=wrong)
 
-	
 	return render_template('login.html')
 
-# TO FIX
 @app.route("/shopping_list", methods=['GET','POST'])
 @login_required
 def shopping_list():
@@ -308,12 +308,11 @@ def user_page():
 		name=json.loads(response.text)['name']
 	except:
 		pass
-	journal = json.loads(requests.get(url+'/'+str(group_id)+'/'+str(user_id)+'/gist').text) # get data for user
-	plot = 'img/'+plots.points_line_chart(journal, app.static_folder)
+	journal = json.loads(requests.get(url+'/'+str(group_id)+'/'+str(user_id)+'/gist').text)['gist'] # get data for user
+	plot = 'img/'+plots.points_line_chart(plots.HList(journal), app.static_folder)
 	tasks = json.loads(requests.get(url+'/'+str(group_id)+'/tasks/list').text) # get tasks
 	response = json.loads(requests.get(url+'/'+str(group_id)).text) # get data for each user
 	members = response['members']
-	print(response)
 	group_name = response['name']
 	return render_template('user.html',name=name,group=group_id,group_name=group_name,members=members,tasks=tasks,time=time.time(),plot=plot)
 
@@ -358,23 +357,20 @@ def update_group():
 		new_member_password = request.form['new_member_password']
 		if len(new_member_name) > 0 and len(new_member_password) > 0:
 			data = {'name': new_member_name,
-					'password': new_member_password,
-					'avatar':'foto'}
-			print('new user')
+					'password': new_member_password}
 			response = requests.post(url+'/'+str(group_id)+'/create_user', data=data)
-			print(response.text)
 	except:
 		pass
 
 	# delete group member
 	try:
 		member_id = int(request.form['delete_user'])
+		response = requests.post(url+'/'+str(group_id)+'/'+str(member_id)+'/destroy')
+		if member_id == user_id:	
+			logout_user()
+			return redirect(url_for('index'))
 	except Exception as e:
 		member_id = None
-	print('deleting user')
-	response = requests.post(url+'/'+str(group_id)+'/'+str(member_id)+'/destroy')
-	print(response.text)
-	
 	return redirect(url_for('user_page'))
 
 @app.route("/update_task", methods=['POST'])
@@ -399,7 +395,6 @@ def update_task():
 		except Exception as e:
 			task_frequency = ''
 
-		print(str(task_id)+'  ------------')
 		if task_id == 0:
 			# new task
 			if(len(task_name) > 0 and 
@@ -428,9 +423,7 @@ def delete_group():
 	user_id = current_user._id
 	response = requests.post(url+'/'+str(group_id)+'/destroy')
 
-	# TODO
-	# also delete members and their data
-
+	logout_user()
 	return redirect(url_for('login'))
 
 @app.route("/change-avatar",methods=['POST'])
@@ -438,20 +431,15 @@ def delete_group():
 def update_avatar():
 	group_id = current_user.group
 	user_id = current_user._id
-	name = json.loads(requests.get(url+'/'+str(group_id)+'/'+str(user_id), data=None).text)['name']	# get user info
 	try:
 		for f in request.files:
 			file = request.files[f]	
-			print(file)
-			file.save(app.static_folder+'\\img\\'+name+'.jpg')
-			# ok=mydb.change_avatar(file, current_user.get_id())
-			# if not ok:
-			# 	raise Exception('error')
+			file.save(app.static_folder+'\\img\\users\\'+current_user.get_id()+'.jpg')
 
 	except:
 		return json.dumps({'success':False,"status": "error",'msg': "Error,change file"}), 403, {'ContentType':'application/json'}
 
-	print("%s ha cambiato avatar"%current_user.get_id())
+	print("%s changed avatar"%current_user.get_id())
 	return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
 
 

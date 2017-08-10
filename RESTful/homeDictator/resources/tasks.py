@@ -83,7 +83,7 @@ class destroy(Resource):
 		if task is not None:
 			db.session.delete(task)
 			db.session.commit()
-			return movement.toJSON()
+			return task.toJSON()
 		else:
 			return {'message': 'no task'}
 

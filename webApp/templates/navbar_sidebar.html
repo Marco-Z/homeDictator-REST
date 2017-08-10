@@ -23,7 +23,7 @@
 				<li><a href="/movements"><i class="material-icons" title="Finance movements">attach_money</i></a></li>
 				{% if todo|length > 0%}
 				<!-- Dropdown Trigger -->
-				<li><a class="dropdown-button red waves-effect waves-light style-neighborhood" href="#!" id="dropnav" data-activates="dropdownnav">{{ todo|length }} da fare<i class="material-icons right">arrow_drop_down</i></a></li>					
+				<li><a class="dropdown-button red waves-effect waves-light style-neighborhood" href="#!" id="dropnav" data-activates="dropdownnav">{{ todo|length }} Things to do<i class="material-icons right">arrow_drop_down</i></a></li>					
 				{% endif %}
 
 			</ul>
@@ -84,7 +84,7 @@
 		<li id="user-nav-button"><!--<img src="/images/{{nome}}.jpg" id="avatar" class="circle image-responsive"></a>
 		<!-- <a href="/user"><span class="white-text " style="margin-right: 10px;"><b >{{nome}}</b></span></a> -->
 		<a href="/user" class='dropdown-button white-text' id="dropdownuser" data-activates='dropdownuserdata'>
-		<img src="{{ url_for('static',filename='img/'+name+'.jpg')}}?dummy={{time}}" id="avatar" class="circle image-responsive">
+		<img src="{{ url_for('static',filename='img/users/'+current_user.get_id()+'.jpg')}}?dummy={{time}}" id="avatar" class="circle image-responsive">
 		<b style="margin-right: 10px;" class="flow-text">{{name}}</b></a>
 		</li>
 	</ul>
@@ -111,7 +111,7 @@
 				<img src="{{ url_for('static',filename='img/low-poly.jpg')}}">
 			</div>
 			{% if name %}
-			<a href="/user"><img class='circle' src="{{ url_for('static',filename='img/'+name+'.jpg')}}?dummy={{time}}"></a>
+			<a href="/user"><img class='circle' src="{{ url_for('static',filename='img/users/'+current_user.get_id()+'.jpg')}}?dummy={{time}}"></a>
 			<a href="/user" class="flow-text">{{name}}</span></a>
 			{% else %}
 			<a href="/login"><img class='circle' src="{{ url_for('static',filename='img/avatar.jpg')}}" ></a>

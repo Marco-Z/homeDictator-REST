@@ -1,6 +1,6 @@
 from flask import request
 from flask_restful import Resource, reqparse
-from homeDictator.common.db import db, Group, User, Journal, Task, _all, _first
+from homeDictator.common.db import db, Group, User, Journal, Finance, Task, _all, _first
 from flask_restful.utils import cors 
 import json 
 from sqlalchemy.sql.functions import func
@@ -16,9 +16,8 @@ class get_group(Resource):
 		members = (db.session.query(User.name,
 									User.id,
 									func.sum(Task.value).label('points'),
-									User.name,
-									User.balance,
-									User.group
+									User.password,
+									User.balance
 								  )
 							 .filter_by(group=group_id)
 							 .outerjoin(Journal)
@@ -30,7 +29,7 @@ class get_group(Resource):
 
 class create(Resource):
 	def post(self):
-		name = request.form['group']
+		name = request.form['name']
 		group = Group(name)
 		db.session.add(group)
 		db.session.commit()
@@ -52,7 +51,18 @@ class update(Resource):
 
 class destroy(Resource):
 	def post(self, group_id):
-		group = Group.query.filter_by(id=group_id).delete()
+		group = get_group().get(group_id=group_id)
+		Group.query.filter_by(id=group_id).delete()
+
+		# cascade
+		users = _all(db.session.query(User.id).filter_by(group=group_id))
+		ul = User.query.filter_by(group=group_id).delete()
+		t = Task.query.filter_by(group=group_id).delete()
+		for u in users:
+			print(u)
+			f = Finance.query.filter_by(user=u['id']).delete()
+			j = Journal.query.filter_by(user=u['id']).delete()
+
 		db.session.commit()
 		return group
 
