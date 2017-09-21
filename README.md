@@ -62,6 +62,36 @@ example:
 ```
 
 -------------------------------
+### /⟨int:group_id⟩/⟨int:user_id⟩/gist
+
+Given a group id and a user id encoded in the URL, it returns a JSON string containing the gist information about the user activities:
+-   `date` of the activities
+-   `points` that the user collected that date
+
+example:
+
+```JSON
+{
+    "user": 1,
+    "gist": [
+        {
+            "points": 3,
+            "date": "2017-07-30"
+        },
+        {
+            "points": 2,
+            "date": "2017-07-31"
+        },
+        {
+            "points": 5,
+            "date": "2017-08-01"
+        },
+        {...}
+    ]
+}
+```
+
+-------------------------------
 ### /⟨int:group_id⟩/⟨int:user_id⟩/journal
 
 Given a group id and a user id encoded in the URL, returns a JSON string containing the information about the user's cleaning activities:
@@ -276,36 +306,6 @@ example:
 
 ## POST APIs
 
-
--------------------------------
-### /⟨int:group_id⟩/⟨int:user_id⟩/gist
-
-Given a group id and a user id encoded in the URL, it returns a JSON string containing the gist information about the user activities:
--   `date` of the activities
--   `points` that the user collected that date
-
-example:
-
-```JSON
-{
-    "user": 1,
-    "gist": [
-        {
-            "points": 3,
-            "date": "2017-07-30"
-        },
-        {
-            "points": 2,
-            "date": "2017-07-31"
-        },
-        {
-            "points": 5,
-            "date": "2017-08-01"
-        },
-        {...}
-    ]
-}
-```
 
 -------------------------------
 ### /⟨int:group_id⟩/⟨int:user_id⟩/destroy
